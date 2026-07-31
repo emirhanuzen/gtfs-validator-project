@@ -1,9 +1,9 @@
 from app.db.database import Base
 from app.config import DATABASE_URL
-from app.models import ImportGtfs
+from app.models import import_gtfs
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-
+from logging.config import fileConfig
 from alembic import context
 
 # this is the Alembic Config object, which provides
@@ -25,10 +25,10 @@ target_metadata = Base.metadata
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-
+config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
 def run_migrations_offline() -> None:
-    config.set_main_option("sqlalchemy.url", DATABASE_URL)
+   
     """Run migrations in 'offline' mode.
 
     This configures the context with just a URL
@@ -72,7 +72,6 @@ def run_migrations_online() -> None:
 
         with context.begin_transaction():
             context.run_migrations()
-
 
 if context.is_offline_mode():
     run_migrations_offline()
