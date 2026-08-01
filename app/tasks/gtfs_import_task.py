@@ -5,6 +5,7 @@ from app.models.import_gtfs import ImportGtfs,ImportStatus
 from app.tasks.zip_utils import extract_zip
 from app.validation.gtfs_validator import validate_gtfs_files
 import shutil
+from app.events.publisher import publish_event
 
 @celery_app.task
 def process_gtfs_import(import_id:int):
@@ -19,6 +20,7 @@ def process_gtfs_import(import_id:int):
         validate_gtfs_files(extracted_path)
         db_import.status=ImportStatus.COMPLETED
         db.commit()
+        publish_event(db_import.id, "completed")
         db.refresh(db_import)
         return db_import
     except Exception as e:
@@ -26,6 +28,7 @@ def process_gtfs_import(import_id:int):
         db_import.status=ImportStatus.FAILED
         db_import.error_message=str(e)
         db.commit()
+        publish_event(db_import.id,"failed",error_message=str(e))
         db.refresh(db_import)
     finally:
         if extracted_path and os.path.exists(extracted_path):

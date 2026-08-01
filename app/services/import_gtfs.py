@@ -11,7 +11,7 @@ def create_import(file_name:str,file_path:str,db:Session):
         return db_import
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500,detail="Dosya yüklenmedi")
+        raise HTTPException(status_code=500,detail=f"Dosya yüklenmedi:{str(e)} ")
 
 def get_import(file_id:int,db:Session):
     db_import=db.query(ImportGtfs).filter(ImportGtfs.id==file_id).first()
