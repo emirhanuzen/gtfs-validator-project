@@ -1,5 +1,5 @@
 from app.db.database import Base
-from app.config import DATABASE_URL
+from app.config import settings
 from app.models import import_gtfs
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -25,7 +25,7 @@ target_metadata = Base.metadata
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 def run_migrations_offline() -> None:
    

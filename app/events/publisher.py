@@ -1,9 +1,9 @@
 import pika
 import json
-from app.config import RABBITMQ_URL
+from app.config import settings
 
 def publish_event(import_id:int,event_type:str,error_message:str=None):
-        connection=pika.BlockingConnection(pika.URLParameters(RABBITMQ_URL))
+        connection=pika.BlockingConnection(pika.URLParameters(settings.RABBITMQ_URL))
         channel=connection.channel()
 
         channel.exchange_declare(exchange="gtfs.events",exchange_type="topic")

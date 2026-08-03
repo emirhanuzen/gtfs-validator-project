@@ -3,7 +3,7 @@ from app.db.database import SessionLocal
 from app.tasks.celery_app import celery_app
 from app.models.import_gtfs import ImportGtfs,ImportStatus
 from app.tasks.zip_utils import extract_zip
-from app.validation.gtfs_validator import validate_gtfs_files
+from app.validation.gtfs_validator import validate_gtfs_files,validate_columns,validate_references
 import shutil
 from app.events.publisher import publish_event
 
@@ -18,6 +18,8 @@ def process_gtfs_import(import_id:int):
         db.commit()
         extracted_path=extract_zip(db_import.file_path)
         validate_gtfs_files(extracted_path)
+        validate_columns(extracted_path)
+        validate_references(extracted_path)
         db_import.status=ImportStatus.COMPLETED
         db.commit()
         publish_event(db_import.id, "completed")

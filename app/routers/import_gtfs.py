@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.dependencies import get_db
 from app.schemas.import_gtfs import ImportResponse
 from app.services import import_gtfs
-from app.config import UPLOAD_DIR
+from app.config import settings
 from app.tasks.gtfs_import_task import process_gtfs_import 
 import uuid
 
@@ -15,10 +15,9 @@ router=APIRouter(prefix="/import_gtfs",tags=["import_gtfs"])
 def create_import(file:UploadFile,db:Session=Depends(get_db)):
     if not file.filename.endswith("zip"):
         raise HTTPException(status_code=400,detail="Sadece .zip dosyası kabul edilmektedir")
-
-    os.makedirs(UPLOAD_DIR,exist_ok=True)
+    os.makedirs(settings.UPLOAD_DIR,exist_ok=True)
     unique_name = f"{uuid.uuid4().hex}_{file.filename}"
-    UPLOAD_DIR_ZIPS=os.path.join(UPLOAD_DIR,"zips")
+    UPLOAD_DIR_ZIPS=os.path.join(settings.UPLOAD_DIR,"zips")
     os.makedirs(UPLOAD_DIR_ZIPS,exist_ok=True)
     file_path=os.path.join(UPLOAD_DIR_ZIPS,unique_name)
     with open(file_path,"wb") as buffer:

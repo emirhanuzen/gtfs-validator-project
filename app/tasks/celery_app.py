@@ -1,6 +1,6 @@
 from celery import Celery
-from app.config import RABBITMQ_URL
+from app.config import settings
 
 celery_app=Celery("gtfs_worker",
-                broker=RABBITMQ_URL,
+                broker=settings.RABBITMQ_URL,
                 include=["app.tasks.gtfs_import_task"])
