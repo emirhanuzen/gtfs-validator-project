@@ -18,3 +18,7 @@ def get_import(file_id:int,db:Session):
     if not db_import:
             raise HTTPException(status_code=404,detail="Aradığınız id'de kayıt yok")
     return db_import
+
+def get_import_all(db:Session):
+     db_import=db.query(ImportGtfs).all()
+     return db_import

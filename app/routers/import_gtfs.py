@@ -28,10 +28,12 @@ def create_import(file:UploadFile,db:Session=Depends(get_db)):
     return db_import
     
 
-@router.get("/",response_model=ImportResponse)
+@router.get("/{file_id}",response_model=ImportResponse)
 def get_import(file_id:int,db:Session=Depends(get_db)):
     return import_gtfs.get_import(file_id,db)
 
-
+@router.get("/",response_model=list[ImportResponse])
+def get_import(db:Session=Depends(get_db)):
+    return import_gtfs.get_import_all(db)
 
 
