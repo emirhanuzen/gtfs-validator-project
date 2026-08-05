@@ -4,6 +4,11 @@ from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
 from app.dependencies import get_db
 from app.schemas.import_gtfs import ImportResponse
+from app.schemas.stop_time   import  StopTimeResponse
+from app.schemas.stop        import   StopResponse 
+from app.schemas.trip        import   TripResponse
+from app.schemas.agency       import  AgencyResponse
+from app.schemas.route        import  RouteResponse
 from app.services import import_gtfs
 from app.config import settings
 from app.tasks.gtfs_import_task import process_gtfs_import 
@@ -35,5 +40,27 @@ def get_import(file_id:int,db:Session=Depends(get_db)):
 @router.get("/",response_model=list[ImportResponse])
 def get_import(db:Session=Depends(get_db)):
     return import_gtfs.get_import_all(db)
+
+@router.get("/{import_id}/routes",response_model=list[RouteResponse])
+def get_routes(import_id:int,db:Session=Depends(get_db)):
+    return import_gtfs.get_routes(import_id,db)
+
+@router.get("/{import_id}/trips",response_model=list[TripResponse])
+def get_trips(import_id:int,db:Session=Depends(get_db)):
+    return import_gtfs.get_trips(import_id,db)
+
+@router.get("/{import_id}/stops",response_model=list[StopResponse])
+def get_stops(import_id:int,db:Session=Depends(get_db)):
+    return import_gtfs.get_stops(import_id,db)
+
+@router.get("/{import_id}/stop_times",response_model=list[StopTimeResponse])
+def get_stop_times(import_id:int,db:Session=Depends(get_db)):
+    return import_gtfs.get_stop_time(import_id,db)
+
+@router.get("/{import_id}/agency",response_model=list[AgencyResponse])
+def get_agency(import_id:int,db:Session=Depends(get_db)):
+    return import_gtfs.get_agency(import_id,db)
+
+
 
 

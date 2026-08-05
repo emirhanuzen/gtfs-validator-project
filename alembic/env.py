@@ -1,6 +1,6 @@
 from app.db.database import Base
 from app.config import settings
-from app.models import import_gtfs
+from app.models import import_gtfs, route, stop, trip, stop_time, agency
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from logging.config import fileConfig

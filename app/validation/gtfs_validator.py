@@ -171,3 +171,14 @@ def check_data_quality_warnings(extracted_path):
         warnings.append(f"{len(empty_route_names)} seferde route_short_name boş")
         return warnings
 
+
+def gtfs_validate_all(extracted_path):
+    validate_gtfs_files(extracted_path)
+    validate_columns(extracted_path)
+    validate_references(extracted_path)
+    validate_stop_sequences(extracted_path)
+    validate_field_values(extracted_path)
+    validate_unique_ids(extracted_path)
+    validate_service_references(extracted_path)
+    validate_dates(extracted_path)
+    validate_times(extracted_path)
