@@ -4,7 +4,7 @@ from app.tasks.celery_app import celery_app
 from app.models.import_gtfs import ImportGtfs,ImportStatus
 from app.tasks.zip_utils import extract_zip
 from app.validation.gtfs_validator import (validate_gtfs_files,validate_columns,
-validate_references,validate_stop_sequences,
+validate_references,validate_stop_sequences,check_data_quality_warnings,
 validate_field_values,validate_unique_ids,validate_service_references,validate_dates,validate_times,check_optional_files)
 import shutil
 from app.events.publisher import publish_event
@@ -39,7 +39,7 @@ def process_gtfs_import(self,import_id:int):
         validate_service_references(extracted_path)
         validate_dates(extracted_path)
         validate_times(extracted_path)
-        warnings=check_optional_files(extracted_path)
+        warnings=check_optional_files(extracted_path)+check_data_quality_warnings(extracted_path)
         if warnings:
              db_import.status=ImportStatus.COMPLETED_WITH_WARNINGS
         else:
