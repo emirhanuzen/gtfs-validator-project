@@ -2,6 +2,11 @@
 
 GTFS formatındaki toplu taşıma verisi (.zip) yükleme, arka planda asenkron olarak doğrulama ve veritabanına kaydetme yapan bir backend servisi. FastAPI, Celery, RabbitMQ ve PostgreSQL kullanılarak, event-driven bir mimariyle geliştirilmiştir.
 
+## Mimari
+
+![Sistem Mimarisi](docs/architecture.svg)
+![Fast API Endpointler](docs/fast_api_swagger.png)
+
 ## Kullanılan Teknolojiler
 
 - **FastAPI** — REST API framework

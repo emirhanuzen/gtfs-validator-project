@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timezone
 from app.config import settings
 
-def publish_event(import_id:int,event_type:str,file_name=None,error_message:str=None):
+def publish_event(import_id:int,event_type:str,record_counts:str,file_name=None,error_message:str=None):
         connection=pika.BlockingConnection(pika.URLParameters(settings.RABBITMQ_URL))
         channel=connection.channel()    
 
@@ -18,6 +18,7 @@ def publish_event(import_id:int,event_type:str,file_name=None,error_message:str=
             "file_name":file_name,
             "event_type":event_type,
             "error_message":error_message,
+            "records_counts":record_counts,
         }
 
         channel.basic_publish(

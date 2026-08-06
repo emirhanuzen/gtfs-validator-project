@@ -10,7 +10,9 @@ def start_consumer():
     connection=pika.BlockingConnection(pika.URLParameters(settings.RABBITMQ_URL))
     channel=connection.channel()
 
+    channel.exchange_declare(exchange="gtfs.events",exchange_type="topic")
     channel.queue_declare(queue="gtfs.audit.queue",durable=True)
+    channel.queue_bind(exchange="gtfs.events",queue="gtfs.audit.queue",routing_key="gtfs.import.*")
 
     channel.basic_consume(
         queue="gtfs.audit.queue",
