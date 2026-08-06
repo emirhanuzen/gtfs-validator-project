@@ -143,10 +143,22 @@ API: `http://localhost:8000`
 Swagger dokümantasyonu: `http://localhost:8000/docs`
 RabbitMQ yönetim paneli: `http://localhost:15672`
 
+## Örnek GTFS Dosyaları
+
+`samples/` klasöründe, sistemi test etmek için kullanılan örnek GTFS ZIP dosyaları bulunur:
+
+- `GTFS_CCRTA.zip` — gerçek dünyadan, büyük bir toplu taşıma feed'i (temiz, chunked okuma ve performans testleri için)
+- `gtfs_bozuk_koordinat.zip` — geçersiz stop_lat/stop_lon değerleri içerir
+- `gtfs_bozuk_saat.zip` — geçersiz arrival_time/departure_time formatı içerir
+- `gtfs_bozuk_service.zip` — trips.txt'te geçersiz service_id referansı içerir
+- `gtfs_sadece_koordinat_bozuk.zip` — sadece koordinat hatası içeren izole test dosyası
+- `gtfs_tekrarli_stop.zip` — tekrarlanan stop_id içerir
+
+Bu dosyaları `POST /import_gtfs/` endpoint'ine yükleyerek, hem başarılı bir import akışını hem de validasyon katmanının farklı hata senaryolarını nasıl yakaladığını test edebilirsiniz.
+
 ## Yapılacaklar (TODO)
 
 - [ ] Unit ve integration testleri (pytest)
-- [ ] Docker Compose ile tüm sistemin (api, postgres, rabbitmq, celery worker) tek komutla ayağa kaldırılması
-- [ ] Basit mimari diyagram dokümantasyona eklenmesi
+- [ ] Docker Compose ile tüm sistemin (api, postgres, rabbitmq, celery worker) tek komutla ayağa kaldırılması(Şimdilik geçici konyerları kullanılıyor.)
 - [ ] (Opsiyonel) `trips`/`stop_times` gibi büyük listeleme endpoint'lerine pagination'ın genişletilmesi
-- [ ] (Opsiyonel) Belirli bir route'a ait trip'leri getiren alt endpoint
+- [ ] (Opsiyonel) Belirli bir route'a ait trip'leri getiren alt endpoint vb.
