@@ -54,8 +54,8 @@ def get_stops(import_id:int,db:Session=Depends(get_db)):
     return import_gtfs.get_stops(import_id,db)
 
 @router.get("/{import_id}/stop_times",response_model=list[StopTimeResponse])
-def get_stop_times(import_id:int,db:Session=Depends(get_db)):
-    return import_gtfs.get_stop_time(import_id,db)
+def get_stop_times(import_id:int,db:Session=Depends(get_db),limit:int=100,offset:int=0):
+    return import_gtfs.get_stop_times(import_id,db,limit=limit,offset=offset)
 
 @router.get("/{import_id}/agency",response_model=list[AgencyResponse])
 def get_agency(import_id:int,db:Session=Depends(get_db)):

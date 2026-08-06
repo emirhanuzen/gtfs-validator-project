@@ -17,8 +17,9 @@ def save_stop_times(import_id:int,extracted_path:str,db:Session):
                 arrival_time=row.get("arrival_time"),
                 departure_time=row.get("departure_time")
             )
-        stop_times_obj.append(stop_times)
+            stop_times_obj.append(stop_times)
         db.bulk_save_objects(stop_times_obj)    
+        db.commit()
 
 
 

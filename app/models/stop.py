@@ -10,5 +10,5 @@ class Stop(Base):
     stop_id=Column(String,nullable=False)
     stop_name=Column(String)
     stop_lat=Column(Float)
-    stopl_lon=Column(Float)
+    stop_lon=Column(Float)
     

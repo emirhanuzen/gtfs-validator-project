@@ -25,6 +25,7 @@ def process_gtfs_import(self,import_id:int):
             return "Kayıt bulunamadı"
     if db_import.status in [ImportStatus.COMPLETED,ImportStatus.FAILED]:
          return db_import    
+    extracted_path=None
     try:
         db_import.status=ImportStatus.PROCESSING
         db.commit()
@@ -36,9 +37,8 @@ def process_gtfs_import(self,import_id:int):
              db_import.status=ImportStatus.COMPLETED_WITH_WARNINGS
         else:
              db_import.status=ImportStatus.COMPLETED
-        db_import.status=ImportStatus.COMPLETED
-        db.commit()
         publish_event(db_import.id, "completed",db_import.file_name)
+        db.commit()
         db.refresh(db_import)
         return db_import
     except Exception as e:

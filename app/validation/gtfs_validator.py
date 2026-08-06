@@ -159,17 +159,16 @@ def validate_times(extracted_path):
 
 def check_data_quality_warnings(extracted_path):
     warnings=[]
-    stops_df=pd.read_csv(os.path.join(extracted_path,"stops.txt"))
+    stops_df=pd.read_csv(os.path.join(extracted_path,"stops.txt"),dtype={"stop_name":str})
     empty_names=stops_df[stops_df["stop_name"].isna() | (stops_df["stop_name"].str.strip()=="")]
     if len(empty_names)>0:
-        warnings.append(f"{len(empty_names)} durakta stop_name boş")
-        return warnings
-
-    routes_df=pd.read_csv(os.path.join(extracted_path,"routes.txt"))    
+        warnings.append(f"{len(empty_names)} durakta stop_name boş")      
+        
+    routes_df=pd.read_csv(os.path.join(extracted_path,"routes.txt"),dtype={"route_short_name":str})    
     empty_route_names=routes_df[routes_df["route_short_name"].isna() | (routes_df["route_short_name"].str.strip()=="")]
     if len(empty_route_names)>0:
         warnings.append(f"{len(empty_route_names)} seferde route_short_name boş")
-        return warnings
+    return warnings
 
 
 def gtfs_validate_all(extracted_path):

@@ -40,13 +40,11 @@ def get_stops(import_id:int,db:Session):
           raise HTTPException(status_code=404,detail="Aradığınız id'de kayıt yok")
      return db_stops
 
-
-def get_stop_time(import_id:int,db:Session):
-     db_stop_time=db.query(StopTime).filter(StopTime.import_id==import_id).all()
-     if not db_stop_time:
+def get_stop_times(import_id:int,db:Session,limit:int=100,offset:int=0):
+     db_stop_times=db.query(StopTime).filter(StopTime.import_id==import_id).offset(offset).limit(limit).all()
+     if not db_stop_times:
           raise HTTPException(status_code=404,detail="Aradığınız id'de kayıt yok")
-     return db_stop_time
-
+     return db_stop_times
 
 def get_trips(import_id:int,db:Session):
      db_trips=db.query(Trip).filter(Trip.import_id==import_id).all()
