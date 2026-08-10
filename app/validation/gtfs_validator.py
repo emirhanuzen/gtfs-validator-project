@@ -53,7 +53,7 @@ def validate_references(extracted_path):
 
     invalid_routes=trips_df[~trips_df["route_id"].isin(routes_df["route_id"])]
     if len(invalid_routes)>0:
-        problem_route_ids=invalid_routes["trip.id"].tolist()
+        problem_route_ids=invalid_routes["trip_id"].tolist()
         raise ValueError(f"trips.txt içinde geçersiz route_id referansı:{problem_route_ids} ")
 
     invalid_trips=stop_times_df[~stop_times_df["trip_id"].isin(trips_df["trip_id"])]

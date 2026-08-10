@@ -1,7 +1,6 @@
 # GTFS Feed Processing Service
 
 GTFS formatındaki toplu taşıma verisi (.zip) yükleme, arka planda asenkron olarak doğrulama ve veritabanına kaydetme yapan bir backend servisi. FastAPI, Celery, RabbitMQ ve PostgreSQL kullanılarak, event-driven bir mimariyle geliştirilmiştir.
-
 ## Mimari
 
 ![Sistem Mimarisi](docs/architecture.svg)

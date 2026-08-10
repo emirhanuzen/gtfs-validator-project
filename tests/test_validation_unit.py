@@ -46,7 +46,7 @@ def test_validate_field_values_with_valid_coordinates(tmp_path):
  #####
 
 def test_validate_gtfs_files_with_missing_file(tmp_path):
-    stops_file=tmp_path /stops_file
+    stops_file=tmp_path / "stops.txt"
     stops_file.write_text("stop_id,stop_name,stop_lat,stop_lon\nSTOP1,Kizilay,39.92,32.85\n")
 
     with pytest.raises(ValueError):
@@ -117,9 +117,13 @@ from app.validation.gtfs_validator import (
 )
 
 #####
-
 def test_validate_columns_with_missing_column(tmp_path):
-    (tmp_path / "stops.txt").write_text("stop_id,stop_name\nS1,Kizilay\n")  # stop_lat/stop_lon eksik
+    (tmp_path / "agency.txt").write_text("agency_name,agency_url,agency_timezone\n")
+    (tmp_path / "stops.txt").write_text("stop_id,stop_name\n")  # stop_lat, stop_lon eksik
+    (tmp_path / "routes.txt").write_text("route_id,route_short_name,route_type\n")
+    (tmp_path / "trips.txt").write_text("trip_id,route_id,service_id\n")
+    (tmp_path / "stop_times.txt").write_text("trip_id,stop_id,stop_sequence\n")
+
     with pytest.raises(ValueError):
         validate_columns(str(tmp_path))
 
