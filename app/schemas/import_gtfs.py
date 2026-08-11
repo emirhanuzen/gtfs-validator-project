@@ -10,6 +10,7 @@ class ImportResponse(BaseModel):
     created_at:datetime
     updated_at:datetime|None=None
     error_message:str|None=None
+    file_checksum:str|None=None
     class Config:
         from_attributes=True
     

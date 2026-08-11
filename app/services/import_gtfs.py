@@ -6,15 +6,17 @@ from app.models.stop import Stop
 from app.models.stop_time import StopTime
 from app.models.trip import  Trip
 from app.models.agency import  Agency
+import hashlib
 
 def create_import(file_name:str,file_path:str,db:Session):
-    try:
-        db_import=ImportGtfs(file_name=file_name,file_path=file_path)
+     checksum=calculate_checksum(file_path)
+     try:
+        db_import=ImportGtfs(file_name=file_name,file_path=file_path,file_checksum=checksum)
         db.add(db_import)
         db.commit()
         db.refresh(db_import)
         return db_import
-    except Exception as e:
+     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500,detail=f"Dosya yüklenmedi:{str(e)} ")
 
@@ -58,3 +60,15 @@ def get_agency(import_id:int,db:Session):
      if not db_agency:
           raise HTTPException(status_code=404,detail="Aradığınız id'de kayıt yok")
      return db_agency
+
+def calculate_checksum(file_path):
+    sha256_hash = hashlib.sha256()
+
+    with open(file_path, "rb") as f:
+        while True:
+            chunk = f.read(4096)
+            if not chunk:
+                break
+            sha256_hash.update(chunk)
+
+    return sha256_hash.hexdigest()

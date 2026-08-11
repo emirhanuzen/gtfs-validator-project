@@ -6,6 +6,14 @@ GTFS formatındaki toplu taşıma verisi (.zip) yükleme, arka planda asenkron o
 ![Sistem Mimarisi](docs/architecture.svg)
 ![Fast API Endpointler](docs/fast_api_swagger.png)
 
+## Bonus Özellikler
+
+### Flower Dashboard
+Celery worker'ların ve task'ların durumu, Flower ile görsel olarak izlenebilir:
+`http://localhost:5555`
+
+![Flower Dashboard](docs/flower-dashboard.png)
+
 ## Kullanılan Teknolojiler
 
 - **FastAPI** — REST API framework
@@ -155,9 +163,4 @@ RabbitMQ yönetim paneli: `http://localhost:15672`
 
 Bu dosyaları `POST /import_gtfs/` endpoint'ine yükleyerek, hem başarılı bir import akışını hem de validasyon katmanının farklı hata senaryolarını nasıl yakaladığını test edebilirsiniz.
 
-## Yapılacaklar (TODO)
 
-- [ ] Unit ve integration testleri (pytest)
-- [ ] Docker Compose ile tüm sistemin (api, postgres, rabbitmq, celery worker) tek komutla ayağa kaldırılması(Şimdilik geçici konyerları kullanılıyor.)
-- [ ] (Opsiyonel) `trips`/`stop_times` gibi büyük listeleme endpoint'lerine pagination'ın genişletilmesi
-- [ ] (Opsiyonel) Belirli bir route'a ait trip'leri getiren alt endpoint vb.

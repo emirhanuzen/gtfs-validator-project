@@ -15,7 +15,7 @@ from app.models.trip import Trip
 from app.models.stop_time import StopTime
 from app.models.agency import Agency 
 import shutil
-
+from app.services.import_gtfs import calculate_checksum
 @celery_app.task(
         bind=True,
         autoretry_for=(OperationalError,AMQPConnectionError),
@@ -34,6 +34,13 @@ def process_gtfs_import(self,import_id:int):
     try:
         db_import.status=ImportStatus.PROCESSING
         db.commit()
+        checksum = calculate_checksum(db_import.file_path)
+        existing_import = db.query(ImportGtfs).filter(
+        ImportGtfs.file_checksum == checksum,
+        ImportGtfs.id != db_import.id
+        ).first()
+        if existing_import:
+            db_import.error_message = f"Bilgi: Bu dosya daha önce import #{existing_import.id} olarak yüklenmiş"
         extracted_path=extract_zip(db_import.file_path)
         gtfs_validate_all(extracted_path)
         save_all_gtfs_data(import_id,extracted_path,db)

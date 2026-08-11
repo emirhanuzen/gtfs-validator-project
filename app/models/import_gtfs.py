@@ -20,4 +20,5 @@ class ImportGtfs(Base):
     created_at=Column(DateTime,server_default=func.now())
     updated_at=Column(DateTime,onupdate=func.now())         
     error_message=Column(Text,nullable=True)
+    file_checksum = Column(String, nullable=True)
     

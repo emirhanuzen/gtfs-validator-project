@@ -39,6 +39,7 @@ services:
       - "8000:8000"
     volumes:
       - uploads_data:/app/uploads
+      - .:/app
     command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
   worker:
@@ -54,7 +55,21 @@ services:
       UPLOAD_DIR: uploads
     volumes:
       - uploads_data:/app/uploads
+      - .:/app
     command: celery -A app.tasks.celery_app worker --loglevel=info
+
+  flower:
+    build: .
+    depends_on:
+      - rabbitmq
+      - worker
+    environment:
+      DATABASE_URL: postgresql://kullanici:sifre@postgres:5432/gtfs_db
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/%2F
+      UPLOAD_DIR: uploads
+    ports:
+      - "5555:5555"
+    command: celery -A app.tasks.celery_app flower --port=5555
 
 volumes:
   uploads_data:
