@@ -6,7 +6,10 @@ from app.models.stop import Stop
 from app.models.stop_time import StopTime
 from app.models.trip import  Trip
 from app.models.agency import  Agency
-import hashlib
+import hashlib,time,json
+from app.models.import_gtfs import ImportStatus
+from app.db.database import SessionLocal
+
 
 def create_import(file_name:str,file_path:str,db:Session):
      checksum=calculate_checksum(file_path)
@@ -72,3 +75,24 @@ def calculate_checksum(file_path):
             sha256_hash.update(chunk)
 
     return sha256_hash.hexdigest()
+
+#generator fonk
+def event_stream(import_id: int):
+    while True:
+        db = SessionLocal()
+        try:
+            db_import = db.query(ImportGtfs).filter(ImportGtfs.id == import_id).first()
+
+            if not db_import:
+                yield f"data: {json.dumps({'error': 'kayıt bulunamadı'})}\n\n"
+                break
+
+            message = {"status": db_import.status.value, "error_message": db_import.error_message}
+            yield f"data: {json.dumps(message)}\n\n"
+
+            if db_import.status in [ImportStatus.COMPLETED, ImportStatus.COMPLETED_WITH_WARNINGS, ImportStatus.FAILED]:
+                break
+        finally:
+            db.close()
+
+        time.sleep(2)

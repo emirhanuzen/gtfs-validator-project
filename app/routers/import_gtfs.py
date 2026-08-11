@@ -13,6 +13,7 @@ from app.services import import_gtfs
 from app.config import settings
 from app.tasks.gtfs_import_task import process_gtfs_import 
 import uuid
+from fastapi.responses import StreamingResponse
 
 router=APIRouter(prefix="/import_gtfs",tags=["import_gtfs"])
 
@@ -60,6 +61,13 @@ def get_stop_times(import_id:int,db:Session=Depends(get_db),limit:int=100,offset
 @router.get("/{import_id}/agency",response_model=list[AgencyResponse])
 def get_agency(import_id:int,db:Session=Depends(get_db)):
     return import_gtfs.get_agency(import_id,db)
+
+@router.get("/{import_id}/stream")
+def stream_import_status(import_id:int):
+    return StreamingResponse(
+        import_gtfs.event_stream(import_id),
+        media_type="text/event-stream"
+    )
 
 
 
