@@ -11,3 +11,7 @@ class TripResponse(BaseModel):
 
     class Config:
         from_attributes=True
+
+class TripUpdate(BaseModel):
+    route_id: str | None = None
+    service_id: str | None = None

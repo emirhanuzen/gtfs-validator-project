@@ -12,3 +12,8 @@ class StopResponse(BaseModel):
 
     class Config:
         from_attributes=True
+
+class StopUpdate(BaseModel):
+    stop_name: str | None = None
+    stop_lat: float | None = None
+    stop_lon: float | None = None

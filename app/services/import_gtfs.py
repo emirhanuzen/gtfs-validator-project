@@ -9,7 +9,9 @@ from app.models.agency import  Agency
 import hashlib,time,json
 from app.models.import_gtfs import ImportStatus
 from app.db.database import SessionLocal
-
+from app.schemas.stop import  StopUpdate
+from app.schemas.route import  RouteUpdate
+from app.schemas.trip import  TripUpdate
 
 def create_import(file_name:str,file_path:str,db:Session):
      checksum=calculate_checksum(file_path)
@@ -96,3 +98,99 @@ def event_stream(import_id: int):
             db.close()
 
         time.sleep(2)
+
+def retry_import(import_id: int, db: Session):
+    db_import = db.query(ImportGtfs).filter(ImportGtfs.id == import_id).first()
+    if not db_import:
+        raise HTTPException(status_code=404, detail="Import bulunamadı")
+    if db_import.status != ImportStatus.FAILED:
+        raise HTTPException(status_code=400, detail="Sadece başarısız (failed) import'lar tekrar çalıştırılabilir")
+    db_import.status = ImportStatus.UPLOADED
+    db_import.error_message = None
+    db.commit()
+    db.refresh(db_import)
+    return db_import
+
+def update_stop(stop_id: int, update_data: StopUpdate, db: Session):
+    db_stop = db.query(Stop).filter(Stop.id == stop_id).first()
+
+    if not db_stop:
+        raise HTTPException(status_code=404, detail="Durak bulunamadı")
+
+    if update_data.stop_name is not None:
+        db_stop.stop_name = update_data.stop_name
+    if update_data.stop_lat is not None:
+        db_stop.stop_lat = update_data.stop_lat
+    if update_data.stop_lon is not None:
+        db_stop.stop_lon = update_data.stop_lon
+
+    db.commit()
+    db.refresh(db_stop)
+    return db_stop
+
+def delete_stop(stop_id: int, db: Session):
+    db_stop = db.query(Stop).filter(Stop.id == stop_id).first()
+
+    if not db_stop:
+        raise HTTPException(status_code=404, detail="Durak bulunamadı")
+
+    db.delete(db_stop)
+    db.commit()
+    return {"detail": f"Durak (id: {stop_id}) silindi"}
+
+
+def update_route(route_id: int, update_data: RouteUpdate, db: Session):
+    db_route = db.query(Route).filter(Route.id == route_id).first()
+
+    if not db_route:
+        raise HTTPException(status_code=404, detail="Hat bulunamadı")
+
+    if update_data.route_short_name is not None:
+        db_route.route_short_name = update_data.route_short_name
+    if update_data.route_long_name is not None:
+        db_route.route_long_name = update_data.route_long_name
+    if update_data.route_type is not None:
+        db_route.route_type = update_data.route_type
+
+    db.commit()
+    db.refresh(db_route)
+    return db_route
+
+
+def delete_route(route_id: int, db: Session):
+    db_route = db.query(Route).filter(Route.id == route_id).first()
+
+    if not db_route:
+        raise HTTPException(status_code=404, detail="Hat bulunamadı")
+
+    db.delete(db_route)
+    db.commit()
+    return {"detail": f"Hat (id: {route_id}) silindi"}
+
+
+
+def update_trip(trip_id: int, update_data: TripUpdate, db: Session):
+    db_trip = db.query(Trip).filter(Trip.id == trip_id).first()
+
+    if not db_trip:
+        raise HTTPException(status_code=404, detail="Sefer bulunamadı")
+
+    if update_data.route_id is not None:
+        db_trip.route_id = update_data.route_id
+    if update_data.service_id is not None:
+        db_trip.service_id = update_data.service_id
+
+    db.commit()
+    db.refresh(db_trip)
+    return db_trip
+
+
+def delete_trip(trip_id: int, db: Session):
+    db_trip = db.query(Trip).filter(Trip.id == trip_id).first()
+
+    if not db_trip:
+        raise HTTPException(status_code=404, detail="Sefer bulunamadı")
+
+    db.delete(db_trip)
+    db.commit()
+    return {"detail": f"Sefer (id: {trip_id}) silindi"}

@@ -11,4 +11,8 @@ class RouteResponse(BaseModel):
 
     class Config:
         from_attributes=True
-        
+
+class RouteUpdate(BaseModel):
+    route_short_name: str | None = None
+    route_long_name: str | None = None
+    route_type: int | None = None

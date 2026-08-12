@@ -16,6 +16,7 @@ from app.models.stop_time import StopTime
 from app.models.agency import Agency 
 import shutil
 from app.services.import_gtfs import calculate_checksum
+from celery.exceptions import Reject
 @celery_app.task(
         bind=True,
         autoretry_for=(OperationalError,AMQPConnectionError),
@@ -67,6 +68,7 @@ def process_gtfs_import(self,import_id:int):
         db.commit()
         publish_event(db_import.id,"failed",db_import.file_name,error_message=str(e))
         db.refresh(db_import)
+        raise Reject(str(e), requeue=False)
     finally:
         if extracted_path and os.path.exists(extracted_path):
             shutil.rmtree(extracted_path)       

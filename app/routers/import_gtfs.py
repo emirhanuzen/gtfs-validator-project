@@ -5,15 +5,16 @@ from sqlalchemy.orm import Session
 from app.dependencies import get_db
 from app.schemas.import_gtfs import ImportResponse
 from app.schemas.stop_time   import  StopTimeResponse
-from app.schemas.stop        import   StopResponse 
-from app.schemas.trip        import   TripResponse
+from app.schemas.stop        import   StopResponse ,StopUpdate
+from app.schemas.trip        import   TripResponse,TripUpdate
 from app.schemas.agency       import  AgencyResponse
-from app.schemas.route        import  RouteResponse
+from app.schemas.route        import  RouteResponse,RouteUpdate
 from app.services import import_gtfs
 from app.config import settings
 from app.tasks.gtfs_import_task import process_gtfs_import 
 import uuid
 from fastapi.responses import StreamingResponse
+
 
 router=APIRouter(prefix="/import_gtfs",tags=["import_gtfs"])
 
@@ -69,6 +70,33 @@ def stream_import_status(import_id:int):
         media_type="text/event-stream"
     )
 
+@router.post("/{import_id}/retry", response_model=ImportResponse)
+def retry_import(import_id: int, db: Session = Depends(get_db)):
+    db_import = import_gtfs.retry_import(import_id, db)
+    process_gtfs_import.delay(db_import.id)
+    return db_import
 
+@router.put("/stops/{stop_id}", response_model=StopResponse)
+def update_stop(stop_id: int, update_data: StopUpdate, db: Session = Depends(get_db)):
+    return import_gtfs.update_stop(stop_id, update_data, db)
 
+@router.delete("/stops/{stop_id}")
+def delete_stop(stop_id: int, db: Session = Depends(get_db)):
+    return import_gtfs.delete_stop(stop_id, db)
+
+@router.put("/routes/{route_id}", response_model=RouteResponse)
+def update_route(route_id: int, update_data: RouteUpdate, db: Session = Depends(get_db)):
+    return import_gtfs.update_route(route_id, update_data, db)
+
+@router.delete("/routes/{route_id}")
+def delete_route(route_id: int, db: Session = Depends(get_db)):
+    return import_gtfs.delete_route(route_id, db)
+
+@router.put("/trips/{trip_id}", response_model=TripResponse)
+def update_trip(trip_id: int, update_data: TripUpdate, db: Session = Depends(get_db)):
+    return import_gtfs.update_trip(trip_id, update_data, db)
+
+@router.delete("/trips/{trip_id}")
+def delete_trip(trip_id: int, db: Session = Depends(get_db)):
+    return import_gtfs.delete_trip(trip_id, db)
 
