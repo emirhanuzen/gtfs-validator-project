@@ -21,4 +21,5 @@ class ImportGtfs(Base):
     updated_at=Column(DateTime,onupdate=func.now())         
     error_message=Column(Text,nullable=True)
     file_checksum = Column(String, nullable=True)
+    celery_task_id = Column(String, nullable=True)
     

@@ -22,6 +22,7 @@ from celery.exceptions import Reject
         autoretry_for=(OperationalError,AMQPConnectionError),
         retry_backoff=True,
         max_retries=3,
+         acks_late=True,
 )
 
 def process_gtfs_import(self,import_id:int):

@@ -18,4 +18,4 @@ main_queue = Queue(
     }
 )
 
-celery_app.conf.task_queues = (main_queue, dead_letter_queue)
+celery_app.conf.task_queues = (main_queue,)
