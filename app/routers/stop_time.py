@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
 from app.dependencies import get_db
 
-router=APIRouter(prefix="/import_gtfs",tags=["stoP_time"])
+router=APIRouter(prefix="/import_gtfs",tags=["stop_time"])
 
 @router.get("/{import_id}/stop_times",response_model=list[StopTimeResponse])
 def get_stop_times(import_id:int,db:Session=Depends(get_db),limit:int=100,offset:int=0):

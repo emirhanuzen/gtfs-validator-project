@@ -2,6 +2,7 @@ from app.models.trip import Trip
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.schemas.trip import TripUpdate 
+import pandas as pd
 
 def update_trip(import_id: int, trip_id: int, update_data: TripUpdate, db: Session):
     db_trip = db.query(Trip).filter(
@@ -39,3 +40,17 @@ def get_trips(import_id:int,db:Session):
      if not db_trips:
           raise HTTPException(status_code=404,detail="Aradığınız id'de kayıt yok")
      return db_trips
+
+def get_trips_as_dataframe(import_id:int,db:Session):
+    trips=db.query(Trip).filter(Trip.import_id==import_id).all()
+
+    data=[
+    {
+        "trip_id": t.trip_id,
+        "route_id": t.route_id,
+        "service_id": t.service_id,
+        }
+        for t in trips
+    ]   
+
+    return pd.DataFrame(data)

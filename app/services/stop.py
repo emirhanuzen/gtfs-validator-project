@@ -2,6 +2,7 @@ from app.models.stop import Stop
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.schemas.stop import  StopUpdate
+import pandas as pd
 
 def update_stop(import_id: int, stop_id: int, update_data: StopUpdate, db: Session):
     db_stop = db.query(Stop).filter(
@@ -42,3 +43,19 @@ def get_stops(import_id:int,db:Session):
      if not db_stops:
           raise HTTPException(status_code=404,detail="Aradığınız id'de kayıt yok")
      return db_stops
+
+
+def get_stops_as_dataframe(import_id: int, db: Session):
+    stops = db.query(Stop).filter(Stop.import_id == import_id).all()
+
+    data = [
+        {
+            "stop_id": s.stop_id,
+            "stop_name": s.stop_name,
+            "stop_lat": s.stop_lat,
+            "stop_lon": s.stop_lon,
+        }
+        for s in stops
+    ]
+
+    return pd.DataFrame(data)
