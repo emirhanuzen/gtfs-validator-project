@@ -14,6 +14,9 @@ Celery worker'ların ve task'ların durumu, Flower ile görsel olarak izlenebili
 
 ![Flower Dashboard](docs/flower-dashboard.png)
 
+## miniIO/S3
+![MinIO Console](docs/minio-dashboard.png)
+
 ## Kullanılan Teknolojiler
 
 - **FastAPI** — REST API framework
@@ -21,12 +24,14 @@ Celery worker'ların ve task'ların durumu, Flower ile görsel olarak izlenebili
 - **Alembic** — veritabanı migration yönetimi
 - **PostgreSQL** — veritabanı
 - **Celery** — asenkron görev kuyruğu (arka plan işleme)
-- **RabbitMQ** — mesaj broker (task kuyruğu + event yayınlama)
+- **RabbitMQ** — mesaj broker (task kuyruğu + event yayınlama), dead-letter queue desteğiyle
 - **Flower** — Celery task/worker izleme paneli
-- **pandas** — GTFS CSV dosyalarının okunması, doğrulanması, büyük dosyalar için parçalı (chunked) okuma
+- **MinIO (S3 uyumlu)** — GTFS ZIP dosyalarının kalıcı, nesne tabanlı depolanması
+- **boto3** — MinIO/S3 ile dosya yükleme/indirme
+- **pandas** — GTFS CSV dosyalarının okunması, doğrulanması, büyük dosyalar için parçalı (chunked) okuma; export sırasında CSV yazma
 - **pika** — RabbitMQ ile doğrudan event yayınlama/dinleme
 - **Pydantic Settings** — merkezi, tip güvenli env değişkeni yönetimi
-- **Docker & Docker Compose** — tüm sistemin (api, worker, postgres, rabbitmq, flower) tek komutla ayağa kaldırılması
+- **Docker & Docker Compose** — tüm sistemin (api, worker, postgres, rabbitmq, flower, minio) tek komutla ayağa kaldırılması
 - **pytest** — unit ve integration testler
 
 ## Proje Yapısı
@@ -42,16 +47,18 @@ app/
 │   ├── import_gtfs.py                 # ImportGtfs modeli, ImportStatus enum
 │   ├── agency.py, route.py, stop.py, trip.py, stop_time.py   # GTFS veri modelleri
 ├── schemas/
-│   └── (her model için Response şeması)
+│   └── (her model için Response/Update şemaları)
 ├── services/
-│   ├── import_gtfs.py                # Import CRUD + GTFS veri sorgulama (routes/stops/trips/stop_times) + SSE stream
-│   ├── gtfs_data_save.py             # Agency/Route/Stop/Trip kaydetme
-│   └── gtfs_data_bulk_save.py        # StopTime kaydetme (chunked + bulk insert)
+│   ├── import_gtfs.py                # Import CRUD, retry, cancel, event stream
+│   ├── storage.py                    # MinIO/S3 dosya yükleme/indirme
+│   ├── export.py                     # Kaydedilmiş GTFS verisini tekrar ZIP olarak dışa aktarma
+│   ├── route.py, stop.py, trip.py, stop_time.py, agency.py   # Entity bazlı görüntüleme + düzenleme (update/delete)
 ├── routers/
-│   └── import_gtfs.py                # Tüm endpoint'ler
+│   ├── import_gtfs.py                # Import upload/status/stream/retry/cancel/export
+│   ├── route.py, stop.py, trip.py, stop_time.py, agency.py   # Entity bazlı endpoint'ler
 ├── tasks/
-│   ├── celery_app.py                  # Celery kurulumu
-│   ├── gtfs_import_task.py            # Orkestratör: doğrula → kaydet → durumu güncelle → event yayınla
+│   ├── celery_app.py                  # Celery kurulumu, dead-letter queue yapılandırması
+│   ├── gtfs_import_task.py            # Orkestratör: MinIO'dan indir → doğrula → kaydet → durumu güncelle → event yayınla
 │   ├── zip_utils.py                   # Güvenli ZIP açma (path traversal + zip bomb koruması)
 │   └── checksum_utils.py              # Dosya checksum hesaplama (SHA256)
 ├── validation/
@@ -73,16 +80,18 @@ requirements.txt
 ## Temel İş Akışı
 
 1. Kullanıcı `POST /import_gtfs/` ile bir GTFS `.zip` dosyası yükler.
-2. API dosyayı `uploads/zips/` altına (benzersiz isimle) kaydeder, dosyanın checksum'ını (SHA256) hesaplar, veritabanında bir `ImportGtfs` kaydı oluşturur (`status: uploaded`) ve kullanıcıya bir `import_id` döner (senkron, anında dönüş).
+2. API, dosyayı geçici olarak diske yazar, checksum'ını (SHA256) hesaplar, dosyayı **MinIO'ya** yükler ve geçici yerel kopyayı siler. Veritabanında bir `ImportGtfs` kaydı oluşturur (`status: uploaded`, `file_path` alanı artık MinIO'daki object key'ini taşır) ve kullanıcıya bir `import_id` döner (senkron, anında dönüş).
 3. Celery worker'a `process_gtfs_import` task'ı gönderilir (asenkron).
 4. Worker:
    - Aynı checksum'a sahip daha önceki bir import varsa bunu tespit edip bilgilendirir (işlemi engellemez)
+   - Dosyayı MinIO'dan kendi geçici diskine indirir
    - ZIP'i güvenli şekilde açar (path traversal ve zip bomb kontrolü ile)
    - GTFS dosyalarını kapsamlı şekilde doğrular (bkz. aşağıdaki liste)
    - Doğrulama başarılıysa, gerçek GTFS verisini (agency, routes, stops, trips, stop_times) veritabanına kaydeder — `stop_times` büyük olabileceği için parçalı (chunked) okunur ve toplu (bulk) yazılır
    - Durumu günceller: `completed`, `completed_with_warnings` (veri kalitesi uyarıları varsa) veya `failed`
-   - RabbitMQ'ya bir event yayınlar (`gtfs.import.completed` / `gtfs.import.failed`)
-5. Kullanıcı `GET /import_gtfs/{id}` ile durumu istediği an sorgulayabilir, ya da `GET /import_gtfs/{id}/stream` ile durumu sayfa yenilemeden, gerçek zamanlı (Server-Sent Events) izleyebilir. İşlem tamamlandıysa `GET /import_gtfs/{id}/routes`, `/stops`, `/trips`, `/stop_times`, `/agency` ile işlenmiş veriyi görüntüleyebilir (`stop_times` için `limit`/`offset` ile sayfalama desteklenir).
+   - Kalıcı olarak başarısız olan görevler, RabbitMQ'nun dead-letter queue mekanizmasıyla ayrı bir kuyrukta (`gtfs.dlq`) toplanır
+   - RabbitMQ'ya bir event yayınlar (`gtfs.import.completed` / `gtfs.import.failed`, kayıt sayılarıyla birlikte)
+5. Kullanıcı `GET /import_gtfs/{id}` ile durumu istediği an sorgulayabilir, ya da `GET /import_gtfs/{id}/stream` ile durumu sayfa yenilemeden, gerçek zamanlı (Server-Sent Events) izleyebilir. İşlem tamamlandıysa `GET /import_gtfs/{id}/routes`, `/stops`, `/trips`, `/stop_times`, `/agency` ile işlenmiş veriyi görüntüleyebilir, `PUT`/`DELETE` ile route/stop/trip kayıtlarını düzenleyebilir, `GET /import_gtfs/{id}/export` ile güncel veriyi tekrar GTFS ZIP'i olarak indirebilir. Başarısız bir import, `POST /import_gtfs/{id}/retry` ile tekrar denenebilir; henüz işlenmemiş bir import, `POST /import_gtfs/{id}/cancel` ile iptal edilebilir.
 
 ## GTFS Doğrulama Katmanı
 
@@ -100,15 +109,18 @@ requirements.txt
 ## Tasarım Kararları
 
 - **Senkron / asenkron ayrımı:** API katmanı sadece isteği kabul edip hemen cevap döner, ağır işlem tamamen Celery worker'a devredilir.
-- **Durum takibi (pull) vs event (push):** `status` alanı kullanıcının istediği an sorgulayabileceği kalıcı bir bilgidir; event ise worker'ın işini bitirince kendiliğinden yayınladığı, ayrı bir bildirim mekanizmasıdır. `/stream` endpoint'i, pull ile push arasında bir orta yol sunar: kullanıcı tekrar tekrar sormaz, ama sunucu da tek bir mesajla yetinmeyip durum değişene kadar akış gönderir.
+- **Durum takibi (pull) vs event (push):** `status` alanı kullanıcının istediği an sorgulayabileceği kalıcı bir bilgidir; event ise worker'ın işini bitirince kendiliğinden yayınladığı, ayrı bir bildirim mekanizmasıdır. `/stream` endpoint'i, pull ile push arasında bir orta yol sunar.
 - **Event exchange/routing key:** `exchange: gtfs.events` (topic tipi), `routing key: gtfs.import.*`. Örnek bir audit consumer (`app/consumers/audit_consumer.py`), bu event'leri dinleyip loglayarak mimarinin uçtan uca çalıştığını gösterir.
+- **Dosya depolama MinIO/S3 üzerinden yapılır, yerel diskte kalıcı olarak tutulmaz:** API ve worker konteynerleri birbirinden izole dosya sistemlerine sahip olduğundan, dosyaların paylaşılan bir depoda tutulması gerekir. MinIO, S3 ile aynı API'yi konuştuğu için (`boto3` üzerinden), ileride gerçek bir bulut sağlayıcısına (Amazon S3 vb.) geçiş, kod değişikliği gerektirmeden, sadece bağlantı ayarlarının değişmesiyle mümkündür. Worker, işlemeden önce dosyayı MinIO'dan kendi geçici diskine indirir, işi bitince siler.
 - **GTFS verisinin kendi ID'leri (`stop_id`, `trip_id` vb.) veritabanında ayrı bir `id` (kendi primary key'imiz) ile tutulur** — çünkü aynı GTFS ID'si farklı import'lar arasında çakışabilir; her satır ayrıca `import_id` foreign key'i ile hangi import'a ait olduğunu taşır.
 - **Referans bütünlüğü veritabanı seviyesinde değil, validasyon aşamasında (pandas ile) kontrol edilir** — bulk insert performansını korumak için.
 - **Hata yönetimi:** Servis katmanında `HTTPException` fırlatma prensibi benimsenmiştir; worker/validasyon katmanında ise `ValueError` kullanılır ve `error_message` alanına yazılır (HTTP isteğinden bağımsız oldukları için).
 - **Idempotency:** Aynı task tekrar tetiklenirse (retry sonucu), zaten `completed`/`failed` durumundaki bir import yeniden işlenmez.
-- **Retry:** Geçici altyapı hataları (`OperationalError`, `AMQPConnectionError`) otomatik olarak yeniden denenir (`retry_backoff`, `max_retries=3`); kalıcı hatalar (validasyon hataları) yeniden denenmez.
-- **Docker'da paylaşılan dosya erişimi:** `api` ve `worker` servisleri izole konteynerler olduğu için diskleri de birbirinden bağımsızdır; bu yüzden `uploads/` klasörü, `docker-compose.yml` içinde bir named volume ile iki servis arasında paylaşılır.
-- **SSE endpoint'i kendi veritabanı session'ını yönetir:** `/stream` endpoint'i uzun süre açık kalabildiğinden, her periyodik kontrolde ayrı bir session açılıp hemen kapatılır; böylece bağlantı, veritabanı bağlantı havuzunu gereksiz yere uzun süre işgal etmez.
+- **Retry ve dead-letter queue:** Geçici altyapı hataları (`OperationalError`, `AMQPConnectionError`) otomatik olarak yeniden denenir (`retry_backoff`, `max_retries=3`); kalıcı olarak başarısız olan görevler ise (`Reject` ile) reddedilip, RabbitMQ'nun dead-letter queue mekanizmasıyla `gtfs.dlq` kuyruğuna yönlendirilir; bu sayede sorunlu mesajlar kaybolmaz ve ayrıca incelenebilir.
+- **CRUD endpoint'leri entity + import bazlı doğrulanır:** `PUT`/`DELETE` işlemleri, hem ilgili kaydın `id`'sini hem de `import_id`'yi kontrol eder; bu, bir kaydın yanlış import altında güncellenmesini/silinmesini engeller.
+- **Servis ve router katmanları entity bazlı bölünmüştür:** Her GTFS varlığı (route, stop, trip, stop_time, agency) kendi servis ve router dosyasında yönetilir; tüm router'lar `main.py` üzerinden aynı `/import_gtfs` prefix'i altında birleştirilir.
+- **Docker'da paylaşılan dosya erişimi:** `api` ve `worker` servisleri izole konteynerler olduğu için diskleri de birbirinden bağımsızdır; bu yüzden `uploads/` klasörü bir named volume ile paylaşılır (MinIO entegrasyonu sonrası bu paylaşım artık kritik değildir, dosyalar MinIO üzerinden aktarılır).
+- **SSE endpoint'i kendi veritabanı session'ını yönetir:** `/stream` endpoint'i uzun süre açık kalabildiğinden, her periyodik kontrolde ayrı bir session açılıp hemen kapatılır.
 
 ## Import Durumları
 
@@ -119,7 +131,7 @@ requirements.txt
 | `processing` | Worker dosyayı işliyor |
 | `completed` | Başarıyla tamamlandı |
 | `completed_with_warnings` | Tamamlandı, veri kalitesi uyarıları var |
-| `failed` | İşlem başarısız oldu, detay için `error_message`'a bakın |
+| `failed` | İşlem başarısız oldu (ya da kullanıcı tarafından iptal edildi), detay için `error_message`'a bakın |
 
 ## Canlı Durum Takibi (SSE)
 
@@ -133,7 +145,7 @@ Bu endpoint, Server-Sent Events (SSE) protokolü ile, import işlemi tamamlanana
 
 ## Kurulum ve Çalıştırma (Docker Compose, önerilen)
 
-`.env` dosyasını oluşturun (bkz. `.env.example`), sonra tek komutla tüm sistemi (API, Celery worker, PostgreSQL, RabbitMQ, Flower) ayağa kaldırın:
+`.env` dosyasını oluşturun (bkz. `.env.example`), sonra tek komutla tüm sistemi (API, Celery worker, PostgreSQL, RabbitMQ, Flower, MinIO) ayağa kaldırın:
 
 ```bash
 docker compose up --build
@@ -145,6 +157,7 @@ Migration'lar, `api` servisi başlarken otomatik olarak uygulanır.
 - Swagger dokümantasyonu: `http://localhost:8000/docs`
 - RabbitMQ yönetim paneli: `http://localhost:15672`
 - Flower (Celery izleme paneli): `http://localhost:5555`
+- MinIO konsolu: `http://localhost:9001` (varsayılan giriş: `minioadmin` / `minioadmin`)
 
 Kod değişiklikleri, `api` ve `worker` servislerine bind mount edildiğinden, API `--reload` ile otomatik yenilenir; `worker` için `docker compose restart worker` yeterlidir. `requirements.txt` veya `Dockerfile` değişikliklerinde `docker compose up --build` ile yeniden inşa edilmesi gerekir.
 
@@ -176,6 +189,8 @@ uvicorn app.main:app --reload
 celery -A app.tasks.celery_app worker --loglevel=info --pool=solo
 python -m app.consumers.audit_consumer   # opsiyonel, event akışını izlemek için
 ```
+
+Not: Bu alternatif kurulumda MinIO kullanılmaz, dosyalar doğrudan yerel diske kaydedilir; MinIO entegrasyonunu test etmek için Docker Compose kurulumu önerilir.
 
 ## Testler
 

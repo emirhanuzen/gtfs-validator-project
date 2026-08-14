@@ -6,17 +6,20 @@ from app.models.import_gtfs import ImportStatus
 from app.db.database import SessionLocal
 from app.tasks.celery_app import celery_app
 
-def create_import(file_name:str,file_path:str,db:Session):
-     checksum=calculate_checksum(file_path)
-     try:
-        db_import=ImportGtfs(file_name=file_name,file_path=file_path,file_checksum=checksum)
+def create_import(db: Session, file_name: str, file_path: str, checksum: str):
+    try:
+        db_import = ImportGtfs(
+            file_name=file_name,
+            file_path=file_path,
+            file_checksum=checksum
+        )
         db.add(db_import)
         db.commit()
         db.refresh(db_import)
         return db_import
-     except Exception as e:
+    except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500,detail=f"Dosya yüklenmedi:{str(e)} ")
+        raise HTTPException(status_code=500, detail=f"Dosya yüklenmedi: {str(e)}")
 
 def get_import(file_id:int,db:Session):
     db_import=db.query(ImportGtfs).filter(ImportGtfs.id==file_id).first()

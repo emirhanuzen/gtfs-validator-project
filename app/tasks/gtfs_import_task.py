@@ -17,6 +17,9 @@ from app.models.agency import Agency
 import shutil
 from app.services.import_gtfs import calculate_checksum
 from celery.exceptions import Reject
+from app.services.storage import download_file_from_minio
+
+
 @celery_app.task(
         bind=True,
         autoretry_for=(OperationalError,AMQPConnectionError),
@@ -43,7 +46,9 @@ def process_gtfs_import(self,import_id:int):
         ).first()
         if existing_import:
             db_import.error_message = f"Bilgi: Bu dosya daha önce import #{existing_import.id} olarak yüklenmiş"
-        extracted_path=extract_zip(db_import.file_path)
+        local_zip_path = f"/tmp/{db_import.file_path}"
+        download_file_from_minio(db_import.file_path, local_zip_path)
+        extracted_path=extract_zip(local_zip_path)
         gtfs_validate_all(extracted_path)
         save_all_gtfs_data(import_id,extracted_path,db)
         record_counts={
