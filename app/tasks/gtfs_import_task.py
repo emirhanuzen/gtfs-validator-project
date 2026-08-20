@@ -39,13 +39,13 @@ def process_gtfs_import(self,import_id:int):
     try:
         db_import.status=ImportStatus.PROCESSING
         db.commit()
-        checksum = calculate_checksum(db_import.file_path)
+        """ checksum = calculate_checksum(db_import.file_path)
         existing_import = db.query(ImportGtfs).filter(
         ImportGtfs.file_checksum == checksum,
         ImportGtfs.id != db_import.id
         ).first()
         if existing_import:
-            db_import.error_message = f"Bilgi: Bu dosya daha önce import #{existing_import.id} olarak yüklenmiş"
+            db_import.error_message = f"Bilgi: Bu dosya daha önce import #{existing_import.id} olarak yüklenmiş" """
         local_zip_path = f"/tmp/{db_import.file_path}"
         download_file_from_minio(db_import.file_path, local_zip_path)
         extracted_path=extract_zip(local_zip_path)
