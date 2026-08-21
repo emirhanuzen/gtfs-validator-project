@@ -83,6 +83,22 @@ services:
     volumes:
       - minio_data:/data
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  celery_beat:
+    build: .
+    depends_on:
+      - rabbitmq
+    environment:
+      DATABASE_URL: postgresql://kullanici:sifre@postgres:5432/gtfs_db
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/%2F
+    volumes:
+      - .:/app
+    command: celery -A app.tasks.celery_app beat --loglevel=info
+    
 volumes:
   uploads_data:
   minio_data:

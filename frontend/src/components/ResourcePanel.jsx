@@ -4,6 +4,7 @@ import Alert from "./Alert.jsx";
 import Spinner from "./Spinner.jsx";
 import EditModal from "./EditModal.jsx";
 import ConfirmDialog from "./ConfirmDialog.jsx";
+import EmptyState from "./EmptyState.jsx";
 import { api } from "../api/client.js";
 import { isMutable } from "../lib/resources.js";
 import { formatCell } from "../lib/format.js";
@@ -84,35 +85,49 @@ export default function ResourcePanel({ importId, resource }) {
       )}
 
       {notice && (
-        <div className="mb-3 flex items-center justify-between rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+        <div className="mb-3 flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-sm text-emerald-800">
           <span>{notice}</span>
           <button
             type="button"
             onClick={() => setNotice(null)}
-            className="text-xs text-green-700 hover:underline"
+            className="text-xs font-medium text-emerald-700 underline-offset-2 hover:underline"
           >
             kapat
           </button>
         </div>
       )}
 
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card">
+        {resource.paginated && (
+          // Tablonun altındaki sayfalama 100 satırın ardında kaldığı için üstte de gösteriliyor.
+          <PaginationBar
+            className="border-b border-slate-200 bg-slate-50/80"
+            page={page}
+            pageSize={pageSize}
+            rows={rows}
+            loading={loading}
+            rangeStart={rangeStart}
+            rangeEnd={rangeEnd}
+            onChange={setPage}
+          />
+        )}
+
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+            <thead className="border-b border-slate-200 bg-slate-50/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
               <tr>
                 {resource.columns.map((column) => (
-                  <th key={column.key} className="px-4 py-2.5 whitespace-nowrap">
+                  <th key={column.key} className="px-5 py-3 whitespace-nowrap">
                     {column.label}
                   </th>
                 ))}
-                {mutable && <th className="px-4 py-2.5 text-right">İşlemler</th>}
+                {mutable && <th className="px-5 py-3 text-right">İşlemler</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading && (
                 <tr>
-                  <td colSpan={columnCount} className="px-4 py-8 text-center text-slate-500">
+                  <td colSpan={columnCount} className="px-5 py-12 text-center text-slate-500">
                     <span className="inline-flex items-center gap-2">
                       <Spinner /> Yükleniyor…
                     </span>
@@ -122,24 +137,33 @@ export default function ResourcePanel({ importId, resource }) {
 
               {!loading && rows.length === 0 && !error && (
                 <tr>
-                  <td colSpan={columnCount} className="px-4 py-8 text-center text-slate-500">
-                    {page > 0
-                      ? "Bu sayfada kayıt yok."
-                      : `Bu içe aktarmaya ait ${resource.label.toLowerCase()} kaydı bulunamadı.`}
+                  <td colSpan={columnCount} className="p-0">
+                    <EmptyState
+                      title={
+                        page > 0
+                          ? "Bu sayfada kayıt yok"
+                          : `${resource.label} kaydı bulunamadı`
+                      }
+                      description={
+                        page > 0
+                          ? "Önceki sayfaya dönebilirsiniz."
+                          : `Bu içe aktarmada ${resource.hint} dosyasından gelen bir kayıt yok.`
+                      }
+                    />
                   </td>
                 </tr>
               )}
 
               {!loading &&
                 rows.map((row) => (
-                  <tr key={row.id} className="hover:bg-slate-50">
+                  <tr key={row.id} className="transition-colors hover:bg-brand-50/40">
                     {resource.columns.map((column) => (
-                      <td key={column.key} className="px-4 py-2 whitespace-nowrap text-slate-700">
+                      <td key={column.key} className="px-5 py-2.5 whitespace-nowrap text-slate-700">
                         {formatCell(row[column.key])}
                       </td>
                     ))}
                     {mutable && (
-                      <td className="px-4 py-2 text-right whitespace-nowrap">
+                      <td className="px-5 py-2.5 text-right whitespace-nowrap">
                         <div className="inline-flex gap-1">
                           <Button size="sm" variant="ghost" onClick={() => setEditingRow(row)}>
                             Düzenle
@@ -165,29 +189,16 @@ export default function ResourcePanel({ importId, resource }) {
         </div>
 
         {resource.paginated && (
-          <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-2.5 text-xs text-slate-600">
-            <span>
-              {rows.length > 0
-                ? `${rangeStart}–${rangeEnd} arası kayıt (sayfa ${page + 1})`
-                : `Sayfa ${page + 1}`}
-            </span>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                disabled={page === 0 || loading}
-                onClick={() => setPage((previous) => Math.max(0, previous - 1))}
-              >
-                Önceki
-              </Button>
-              <Button
-                size="sm"
-                disabled={rows.length < pageSize || loading}
-                onClick={() => setPage((previous) => previous + 1)}
-              >
-                Sonraki
-              </Button>
-            </div>
-          </div>
+          <PaginationBar
+            className="border-t border-slate-200 bg-slate-50/70"
+            page={page}
+            pageSize={pageSize}
+            rows={rows}
+            loading={loading}
+            rangeStart={rangeStart}
+            rangeEnd={rangeEnd}
+            onChange={setPage}
+          />
         )}
       </div>
 
@@ -211,6 +222,34 @@ export default function ResourcePanel({ importId, resource }) {
         onConfirm={handleDelete}
         onCancel={() => setDeletingRow(null)}
       />
+    </div>
+  );
+}
+
+/**
+ * Sayfalanan kaynaklar (şimdilik stop_times) için önceki/sonraki denetimi.
+ * Tablonun hem üstünde hem altında gösteriliyor: 100 satırlık tabloda alttaki
+ * denetim ekranın çok aşağısında kalıyor ve fark edilmiyordu.
+ */
+function PaginationBar({ page, pageSize, rows, loading, rangeStart, rangeEnd, onChange, className = "" }) {
+  const hasNext = rows.length === pageSize;
+
+  return (
+    <div className={`flex flex-wrap items-center justify-between gap-3 px-5 py-3 ${className}`}>
+      <div className="text-xs text-slate-600">
+        <span className="font-medium text-slate-700">
+          {rows.length > 0 ? `${rangeStart}–${rangeEnd} arası kayıt` : "Kayıt yok"}
+        </span>
+        <span className="text-slate-400"> · sayfa {page + 1} · sayfa başına {pageSize}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button size="sm" disabled={page === 0 || loading} onClick={() => onChange(Math.max(0, page - 1))}>
+          ← Önceki
+        </Button>
+        <Button size="sm" disabled={!hasNext || loading} onClick={() => onChange(page + 1)}>
+          Sonraki →
+        </Button>
+      </div>
     </div>
   );
 }

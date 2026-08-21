@@ -111,7 +111,7 @@ export default function EditModal({ open, resource, row, onSubmit, onClose }) {
           <div key={field.name}>
             <label
               htmlFor={`field-${field.name}`}
-              className="block text-xs font-medium text-slate-600"
+              className="block text-xs font-semibold text-slate-600"
             >
               {field.label}
             </label>
@@ -121,8 +121,8 @@ export default function EditModal({ open, resource, row, onSubmit, onClose }) {
               inputMode={field.type === "text" ? "text" : "decimal"}
               value={values[field.name]}
               onChange={(event) => handleChange(field.name, event.target.value)}
-              className={`mt-1 w-full rounded-md border px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                fieldErrors[field.name] ? "border-red-300" : "border-slate-300"
+              className={`mt-1.5 w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 ${
+                fieldErrors[field.name] ? "border-red-300" : "border-slate-300 hover:border-slate-400"
               }`}
             />
             {fieldErrors[field.name] && (

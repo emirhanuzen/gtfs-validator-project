@@ -1,5 +1,31 @@
 @import "tailwindcss";
 
+/**
+ * Tema: mevcut mavi/gri çizgi korunuyor, marka mavisi biraz daha canlı bir
+ * indigo-maviye çekildi. Bileşenler `blue-*` yerine `brand-*` kullanıyor.
+ */
+@theme {
+  --color-brand-50: #eef4ff;
+  --color-brand-100: #dbe6ff;
+  --color-brand-200: #bfd4ff;
+  --color-brand-300: #93b4ff;
+  --color-brand-400: #608cff;
+  --color-brand-500: #3b6bf5;
+  --color-brand-600: #2451e0;
+  --color-brand-700: #1c40b8;
+  --color-brand-800: #1b3894;
+  --color-brand-900: #1c3376;
+  --color-brand-950: #131f47;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+
+  /* Kartlar için yumuşak, dağılmış gölgeler */
+  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 4px 12px -6px rgb(15 23 42 / 0.12);
+  --shadow-card-hover: 0 2px 4px 0 rgb(15 23 42 / 0.05), 0 12px 28px -12px rgb(15 23 42 / 0.22);
+  --shadow-pop: 0 24px 48px -16px rgb(15 23 42 / 0.28);
+}
+
 html,
 body,
 #root {
@@ -8,4 +34,59 @@ body,
 
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
+  /* Sayfanın üst kısmına çok hafif bir renk sıcaklığı */
+  background-image:
+    radial-gradient(60rem 32rem at 15% -10%, rgb(36 81 224 / 0.07), transparent 60%),
+    radial-gradient(48rem 28rem at 95% -5%, rgb(99 102 241 / 0.06), transparent 55%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* İlerleme çubuğundaki kayan çizgi deseni (yükleme sürerken hareketli kalsın) */
+/* Desen ::after ile bindiriliyor; altındaki renk geçişi (bg-gradient-to-r) korunsun diye. */
+.progress-stripes {
+  position: relative;
+}
+
+.progress-stripes::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: linear-gradient(
+    45deg,
+    rgb(255 255 255 / 0.25) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgb(255 255 255 / 0.25) 50%,
+    rgb(255 255 255 / 0.25) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 1.25rem 1.25rem;
+  animation: progress-stripes 0.9s linear infinite;
+}
+
+@keyframes progress-stripes {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 1.25rem 0;
+  }
+}
+
+/* Tablo ve kod alanlarında ince, göze batmayan kaydırma çubuğu */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-slate-300) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

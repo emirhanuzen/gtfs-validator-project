@@ -15,8 +15,8 @@ import { RESOURCES, getResource } from "../lib/resources.js";
 function MetaItem({ label, children, title }) {
   return (
     <div>
-      <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</dt>
-      <dd className="mt-0.5 text-sm text-slate-700" title={title}>
+      <dt className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</dt>
+      <dd className="mt-1 text-sm text-slate-700" title={title}>
         {children}
       </dd>
     </div>
@@ -77,8 +77,12 @@ export default function ImportDetailPage() {
   return (
     <div className="space-y-6">
       <div>
-        <Link to="/" className="text-sm text-slate-500 hover:text-slate-900 hover:underline">
-          ← İçe aktarma listesi
+        <Link
+          to="/"
+          className="group inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900"
+        >
+          <span className="transition-transform duration-150 group-hover:-translate-x-0.5">←</span>
+          İçe aktarma listesi
         </Link>
       </div>
 
@@ -89,18 +93,18 @@ export default function ImportDetailPage() {
       )}
 
       {loading && !record && (
-        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-8 text-slate-500">
+        <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 py-10 text-slate-500 shadow-card">
           <Spinner /> Yükleniyor…
         </div>
       )}
 
       {record && (
         <>
-          <section className="rounded-lg border border-slate-200 bg-white p-5">
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="text-xl font-semibold tracking-tight break-all">
+                  <h1 className="text-2xl font-semibold tracking-tight break-all text-slate-900">
                     {record.file_name}
                   </h1>
                   <StatusBadge status={record.status} />
@@ -131,7 +135,7 @@ export default function ImportDetailPage() {
               </div>
             </div>
 
-            <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-slate-100 pt-4 sm:grid-cols-4">
+            <dl className="mt-6 grid grid-cols-2 gap-5 border-t border-slate-100 pt-5 sm:grid-cols-4">
               <MetaItem label="Oluşturulma">{formatDate(record.created_at)}</MetaItem>
               <MetaItem label="Güncellenme">{formatDate(record.updated_at)}</MetaItem>
               <MetaItem label="Durum kodu">
@@ -160,20 +164,20 @@ export default function ImportDetailPage() {
           </section>
 
           <section>
-            <div className="flex flex-wrap gap-1 border-b border-slate-200">
+            <div className="flex flex-wrap gap-1 border-b border-slate-200 pb-px">
               {RESOURCES.map((item) => (
                 <button
                   key={item.key}
                   type="button"
                   onClick={() => setActiveTab(item.key)}
-                  className={`-mb-px rounded-t-md border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+                  className={`-mb-px rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${
                     activeTab === item.key
-                      ? "border-blue-600 text-blue-700"
-                      : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800"
+                      ? "border-brand-600 bg-brand-50/60 text-brand-700"
+                      : "border-transparent text-slate-500 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
                   }`}
                 >
                   {item.label}
-                  <span className="ml-1.5 font-mono text-xs text-slate-400">{item.hint}</span>
+                  <span className="ml-1.5 hidden font-mono text-xs text-slate-400 sm:inline">{item.hint}</span>
                 </button>
               ))}
             </div>

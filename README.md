@@ -8,6 +8,7 @@ GTFS formatındaki toplu taşıma verisi (.zip) yükleme, arka planda asenkron o
 ## Sistem Arayüzü (React (Vite) tabanlı frontend)
 ![Sistem Arayüzü](docs/arayüz-1.png)
 ![Gtfs Dosyası'nın Arayüzü](docs/arayüz-2.png)
+![Gtfs Dosyası'nın Arayüzü failed](docs/arayüz-3.png)
 
 ## Swagger Arayüzü
 ![Fast API Endpointler](docs/fast_api_swagger.png)

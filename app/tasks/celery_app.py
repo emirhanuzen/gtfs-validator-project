@@ -19,3 +19,9 @@ main_queue = Queue(
 )
 
 celery_app.conf.task_queues = (main_queue,)
+celery_app.conf.beat_schedule = {
+    "cleanup-orphan-chunks": {
+        "task": "app.tasks.gtfs_import_task.cleanup_orphan_chunks",
+        "schedule": 600.0,
+    },
+}

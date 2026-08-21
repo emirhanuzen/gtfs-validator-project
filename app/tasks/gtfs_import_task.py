@@ -18,6 +18,7 @@ import shutil
 from app.services.import_gtfs import calculate_checksum
 from celery.exceptions import Reject
 from app.services.storage import download_file_from_minio
+import time
 
 
 @celery_app.task(
@@ -79,3 +80,18 @@ def process_gtfs_import(self,import_id:int):
         if extracted_path and os.path.exists(extracted_path):
             shutil.rmtree(extracted_path)       
         db.close()     
+
+CHUNK_DIR = "/tmp/chunks"
+MAX_AGE_SECONDS = 30 * 60
+
+@celery_app.task
+def cleanup_orphan_chunks():
+    if not os.path.exists(CHUNK_DIR):
+        return
+
+    now = time.time()
+    for filename in os.listdir(CHUNK_DIR):
+        file_path = os.path.join(CHUNK_DIR, filename)
+        file_age = now - os.path.getmtime(file_path)
+        if file_age > MAX_AGE_SECONDS:
+            os.remove(file_path)

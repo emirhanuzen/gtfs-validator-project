@@ -11,19 +11,19 @@ export const STATUS_META = {
   },
   processing: {
     label: "İşleniyor",
-    className: "bg-blue-50 text-blue-700 ring-blue-200",
-    dotClassName: "bg-blue-500",
+    className: "bg-brand-50 text-brand-700 ring-brand-200",
+    dotClassName: "bg-brand-500",
     spinner: true,
   },
   completed: {
     label: "Tamamlandı",
-    className: "bg-green-50 text-green-700 ring-green-200",
-    dotClassName: "bg-green-500",
+    className: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+    dotClassName: "bg-emerald-500",
   },
   completed_with_warnings: {
     label: "Uyarılarla tamamlandı",
-    className: "bg-yellow-50 text-yellow-800 ring-yellow-300",
-    dotClassName: "bg-yellow-500",
+    className: "bg-amber-50 text-amber-800 ring-amber-300",
+    dotClassName: "bg-amber-500",
   },
   failed: {
     label: "Başarısız",
